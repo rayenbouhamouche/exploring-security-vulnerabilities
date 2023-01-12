@@ -1,0 +1,158 @@
+import serial
+import socket # Import the socket functionality
+import numpy as np
+import os
+from cryptography.fernet import Fernet
+serial_port = serial.Serial('COM6', 9600 )
+
+portArray = []
+x = 0
+hostName = socket.gethostname()     # Dynamic hostName
+ip = socket.gethostbyname(hostName) # Dynamic IP
+fqdn = socket.getfqdn()             # Dynamic fqdn
+file = ( "cw.txt" );
+while ( True ):
+        command = serial_port.read( 2 ) # read 2 bytes from the Arduino
+        if ( command == b'B1' ):
+            print( 'Perpariing to scan the network and and then save the file and then encrypt ' )
+            cwd = os.getcwd() # The current working directory
+            mTarget = ('M:\\') # The target drive (M)
+            dirTarget = ('M:\Computer Secuirty\CourseWork\Coursework 02\\7131COMP') # The target directory
+
+            targetFile = ("cw.txt") # The target file 
+            pathExist = os.path.exists(dirTarget) # Boolean to determine if the target directory exists 
+
+            ipAddress =  ('Your IP Address is : ' + ip) # Find IP address
+            hostName = ('Your hostname is : ' + hostName) # Find hostname
+            domain =  ('Your domain is : ' + fqdn) # Find domain address
+
+            print ('Current working directory is' + ' ' + cwd) # Tell the user the CWD
+
+            if cwd != mTarget : # If the CWD is not M
+                            os.chdir(mTarget) # Change to M
+                            print('Directory changed to' + ' ' + mTarget) # Print information to user
+
+            elif cwd == target: # If the current directory is the target directory
+                            print('Directory does not need to be changed') # Print information to user 
+
+            if not pathExist: # If the boolean is false
+                            os.mkdir("7131COMP") # Create the directory
+                            
+            elif pathExist: # If the boolean is true
+                                print('The target directory exists and does not need to be created') # Print information to user
+
+            os.chdir(dirTarget) # Move to target directory
+            print('Moved to' + ' ' + dirTarget) # Print information to the user 
+
+            f = open(targetFile,"w") #Open/Create the file (in write mode)
+            print ('File' + ' ' + targetFile + ' ' + 'is open for writing') # Print information to user
+            f.write(ipAddress) # Write string
+            print (ipAddress + ' has been written to' + ' ' + targetFile) # Print information to user
+            f.close() # Close file
+
+            f = open(targetFile,"a") # Open the file (in append mode) 
+            print ('File' + ' ' + targetFile + ' ' + 'is open for writing') # Print information to user
+            f.write('\n' + hostName) # Write string
+            print (hostName + ' has been written to' + ' ' + targetFile) # Print information to user
+            f.close()
+
+            f = open(targetFile,"a") # Open the file (in append mode) 
+            print ('File' + ' ' + targetFile + ' ' + 'is open for writing') # Print information to user
+            f.write('\n' + domain) # Write string
+            print (domain + ' has been written to' + ' ' + targetFile) # Print information to user
+            f.close()
+
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Connect the socket
+
+            try:
+                for port in range (130,140):
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    socket.setdefaulttimeout(1)
+
+                    result = s.connect_ex((ip,port))
+                    if result == 0:
+                        print ("Port {} is open".format(port))
+                        portArray.append("Port {} is open".format(port))
+                    elif result != 0:
+                        print("Port {} is closed".format(port))
+                        portArray.append("Port {} is closed".format(port))
+                        x = 0+1
+                    s.close()
+
+            except socket.gaierror: # Hostname cannot be resolved
+                print("\n Hostname cannot be resolved")
+                sys.exit()
+
+            except socket.error: # Server is not responding
+                print("\ Server is not responding")
+                sys.exit()
+
+            print(portArray)
+
+
+            group = np.array(portArray)
+            portInfo = "\n".join(group)
+
+            portList =  ('The port is : ' + portInfo) # Find domain address
+
+            f = open(targetFile,"a") # Open the file (in append mode) 
+            print ('File' + ' ' + targetFile + ' ' + 'is open for writing') # Print information to user
+            f.write('\n' + portList) # Write string
+            print (portList + ' has been written to' + ' ' + targetFile) # Print information to user
+            f.close()
+
+
+
+            # In order to get the encryption to work run and do
+            # write_key()
+            # Key = load_Key()
+            # encrypt("filename",key)
+            # decrypt("filename",key)
+
+            def write_key(): #Create a function called 'write key'
+                key = Fernet.generate_key() # Generate a key
+                with open("key.key","wb") as key_file: #Create a key file (to store the key)
+                    key_file.write(key) #Write the key to the key file
+
+            def load_key(): #Create a function to open and read the key file
+                return open ("key.key", "rb").read()
+
+            def encrypt(filename, key): # Create a fucntion that accepts a filename and a key
+                f = Fernet(key) # Call the key
+                with open (filename,"rb") as file: #Open the file (Task 7)
+                    file_data = file.read() # Read the file
+                    encrypted_data = f.encrypt(file_data) # Encrypt the data contained in the file
+                    with open(filename, "wb") as file:
+                        file.write(encrypted_data) # Write the encrypted data to the file
+
+            def decrypt(filename, key): # Create a fucntion that accepts a filename and a key
+                f = Fernet(key) # Call the key
+                with open (filename,"rb") as file: #Open the file (Task 7)
+                    file_data = file.read() # Read the file
+                    decrypted_data = f.decrypt(file_data) # Decrypt the data contained in the file
+                    with open(filename, "wb") as file:
+                        file.write(decrypted_data) # Write the decrypted data to the file
+
+            write_key()
+            key =  load_key()
+            encrypted = 0
+            a = True
+            while( a == True ):
+                if ( command == b'B1' ):
+                    if (encrypted == 0 ):
+                        print('Encrypting')
+                        encrypt (file,key)
+                        encrypted = 1
+                        a = False
+                    else:
+                        print ('Decrypting')
+                        decrypt(file,key)
+                        encrypted = 0
+           # serial_port.close()
+            
+else :
+    while (a == False):
+        print ('Decrypting')
+        decrypt(file,key)
+        encrypted = 0
+    serial_port.close()
